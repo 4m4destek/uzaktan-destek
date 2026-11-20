@@ -1,0 +1,28 @@
+name: Build
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install pyinstaller mss numpy opencv-python-headless Pillow
+      - name: Download ffmpeg
+        run: |
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip
+          Copy-Item "ffmpeg-release-essentials/bin/ffmpeg.exe" .
+      - name: Download zrok2
+        run: |
+          Invoke-WebRequest -Uri "https://get.zrok.io" -OutFile install_zrok.ps1
+          powershell -ExecutionPolicy Bypass -File install_zrok.ps1
+          Copy-Item "$env:USERPROFILE\.zrok\zrok2.exe" .
+      - name: Build
+        run: pyinstaller --onefile --noconsole --add-binary "ffmpeg.exe;." --add-binary "zrok2.exe;." --hidden-import mss --hidden-import cv2 --hidden-import numpy --hidden-import PIL --name "UzaktanDesteK" client.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: output
+          path: dist/UzaktanDesteK.exe
