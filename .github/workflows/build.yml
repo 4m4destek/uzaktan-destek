@@ -15,12 +15,28 @@ jobs:
           Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
           Expand-Archive ffmpeg.zip
           Copy-Item "ffmpeg-release-essentials/bin/ffmpeg.exe" .
+          Write-Host "ffmpeg.exe: $(Get-Item ffmpeg.exe | Select-Object Length)"
       - name: Download zrok2
         run: |
-          Invoke-WebRequest -Uri "https://github.com/openziti/zrok/releases/download/v2.0.9/zrok_2.0.9_windows_amd64.tar.gz" -OutFile zrok_windows.tar.gz
+          $url = "https://github.com/openziti/zrok/releases/download/v2.0.9/zrok_2.0.9_windows_amd64.tar.gz"
+          Write-Host "Downloading: $url"
+          Invoke-WebRequest -Uri $url -OutFile zrok_windows.tar.gz
+          Write-Host "Downloaded: $(Get-Item zrok_windows.tar.gz | Select-Object Length)"
           tar -xf zrok_windows.tar.gz
-          Copy-Item zrok2.exe . -Force
-          Get-ChildItem zrok2.exe
+          Write-Host "Extracted files:"
+          Get-ChildItem -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
+          if (Test-Path "zrok2.exe") {
+            Write-Host "Found zrok2.exe in current dir"
+          } else {
+            $found = Get-ChildItem -Recurse -Filter "zrok2.exe"
+            if ($found) {
+              Copy-Item $found.FullName "./zrok2.exe" -Force
+              Write-Host "Copied from: $($found.FullName)"
+            } else {
+              Write-Error "zrok2.exe NOT FOUND after extraction!"
+              exit 1
+            }
+          }
       - name: Build
         run: pyinstaller --onefile --noconsole --add-binary "ffmpeg.exe;." --add-binary "zrok2.exe;." --hidden-import mss --hidden-import cv2 --hidden-import numpy --hidden-import PIL --name "UzaktanDesteK" client.py
       - uses: actions/upload-artifact@v4
