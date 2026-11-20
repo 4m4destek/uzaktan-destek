@@ -16,7 +16,6 @@ jobs:
           Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
           Expand-Archive ffmpeg.zip
           $ffmpeg = Get-ChildItem -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
-          Write-Host "Found: $($ffmpeg.FullName)"
           Copy-Item $ffmpeg.FullName "./ffmpeg.exe" -Force
           Write-Host "ffmpeg size: $((Get-Item ffmpeg.exe).Length)"
       - name: Download zrok2
@@ -25,14 +24,15 @@ jobs:
           $api = "https://api.github.com/repos/openziti/zrok/releases/latest"
           $release = Invoke-RestMethod -Uri $api
           $asset = $release.assets | Where-Object { $_.name -like "*windows*amd64*" }
-          if (-not $asset) { Write-Error "No windows amd64 asset! Assets: $($release.assets | ForEach-Object { $_.name })"; exit 1 }
           Write-Host "Asset: $($asset.name)"
           Invoke-WebRequest -Uri $asset.browser_download_url -OutFile zrok_win.tar.gz
           tar -xzf zrok_win.tar.gz
-          $exe = Get-ChildItem -Recurse -Filter "zrok2.exe" | Select-Object -First 1
-          if (-not $exe) { $exe = Get-ChildItem -Recurse -Filter "*.exe" | Where-Object { $_.Name -like "*zrok*" } | Select-Object -First 1 }
-          if (-not $exe) { Write-Error "No zrok exe found!"; exit 1 }
-          Copy-Item $exe.FullName "./zrok2.exe" -Force
+          if (Test-Path "./zrok2.exe") {
+            Write-Host "zrok2.exe already in current dir"
+          } else {
+            $exe = Get-ChildItem -Recurse -Filter "zrok2.exe" | Select-Object -First 1
+            if ($exe) { Copy-Item $exe.FullName "./zrok2.exe" -Force }
+          }
           Write-Host "zrok2 size: $((Get-Item zrok2.exe).Length)"
       - name: Build
         run: pyinstaller --onefile --noconsole --add-binary "ffmpeg.exe;." --add-binary "zrok2.exe;." --hidden-import mss --hidden-import cv2 --hidden-import numpy --hidden-import PIL --name "UzaktanDesteK" client.py
