@@ -11,32 +11,29 @@ jobs:
       - name: Install deps
         run: pip install pyinstaller mss numpy opencv-python-headless Pillow
       - name: Download ffmpeg
+        shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
           Expand-Archive ffmpeg.zip
-          Copy-Item "ffmpeg-release-essentials/bin/ffmpeg.exe" .
-          Write-Host "ffmpeg.exe: $(Get-Item ffmpeg.exe | Select-Object Length)"
+          $ffmpeg = Get-ChildItem -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          Write-Host "Found: $($ffmpeg.FullName)"
+          Copy-Item $ffmpeg.FullName "./ffmpeg.exe" -Force
+          Write-Host "ffmpeg size: $((Get-Item ffmpeg.exe).Length)"
       - name: Download zrok2
+        shell: pwsh
         run: |
-          $url = "https://github.com/openziti/zrok/releases/download/v2.0.9/zrok_2.0.9_windows_amd64.tar.gz"
-          Write-Host "Downloading: $url"
-          Invoke-WebRequest -Uri $url -OutFile zrok_windows.tar.gz
-          Write-Host "Downloaded: $(Get-Item zrok_windows.tar.gz | Select-Object Length)"
-          tar -xf zrok_windows.tar.gz
-          Write-Host "Extracted files:"
-          Get-ChildItem -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
-          if (Test-Path "zrok2.exe") {
-            Write-Host "Found zrok2.exe in current dir"
-          } else {
-            $found = Get-ChildItem -Recurse -Filter "zrok2.exe"
-            if ($found) {
-              Copy-Item $found.FullName "./zrok2.exe" -Force
-              Write-Host "Copied from: $($found.FullName)"
-            } else {
-              Write-Error "zrok2.exe NOT FOUND after extraction!"
-              exit 1
-            }
-          }
+          $api = "https://api.github.com/repos/openziti/zrok/releases/latest"
+          $release = Invoke-RestMethod -Uri $api
+          $asset = $release.assets | Where-Object { $_.name -like "*windows*amd64*" }
+          if (-not $asset) { Write-Error "No windows amd64 asset! Assets: $($release.assets | ForEach-Object { $_.name })"; exit 1 }
+          Write-Host "Asset: $($asset.name)"
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile zrok_win.tar.gz
+          tar -xzf zrok_win.tar.gz
+          $exe = Get-ChildItem -Recurse -Filter "zrok2.exe" | Select-Object -First 1
+          if (-not $exe) { $exe = Get-ChildItem -Recurse -Filter "*.exe" | Where-Object { $_.Name -like "*zrok*" } | Select-Object -First 1 }
+          if (-not $exe) { Write-Error "No zrok exe found!"; exit 1 }
+          Copy-Item $exe.FullName "./zrok2.exe" -Force
+          Write-Host "zrok2 size: $((Get-Item zrok2.exe).Length)"
       - name: Build
         run: pyinstaller --onefile --noconsole --add-binary "ffmpeg.exe;." --add-binary "zrok2.exe;." --hidden-import mss --hidden-import cv2 --hidden-import numpy --hidden-import PIL --name "UzaktanDesteK" client.py
       - uses: actions/upload-artifact@v4
