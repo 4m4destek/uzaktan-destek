@@ -2,7 +2,6 @@
 """
 Client — Windows (müşteri tarafı)
 Kullanım: UzaktanDesteK.exe --id user --pw 1234
-         (veya çift tıkla, ID/şifre ekranda dolar)
 """
 import sys
 import os
@@ -40,7 +39,7 @@ CHUNK_SIZE = 65536
 
 # ─── Auth ───
 def check_auth(password):
-    return password == "1234"  # TODO: kendi şifreni koy
+    return password == "1234"
 
 
 # ─── Arg parse ───
@@ -62,14 +61,14 @@ def start_zrok_shares(token):
     p1 = subprocess.Popen(
         [ZROK, "share", "private", token,
          "--backend-mode", "tcpTunnel",
-         f"127.0.0.1:{VIDEO_PORT}", "--headless"],
+         f"127.0.0.1:{VIDEO_PORT}"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     procs.append(p1)
     p2 = subprocess.Popen(
         [ZROK, "share", "private", f"{token}_c",
          "--backend-mode", "tcpTunnel",
-         f"127.0.0.1:{CTRL_PORT}", "--headless"],
+         f"127.0.0.1:{CTRL_PORT}"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     procs.append(p2)
@@ -111,7 +110,6 @@ def video_sender(conn):
                 arr = cv2.resize(arr, (WIDTH, HEIGHT))
                 arr = cv2.cvtColor(arr, cv2.COLOR_BGRA2BGRA)
 
-            # Değişim kontrolü — aynıysa gönderme
             if last_frame is not None:
                 diff = np.abs(arr.astype(np.int16) - last_frame.astype(np.int16))
                 if diff.mean() < 1.5:
@@ -326,7 +324,6 @@ def main():
     status = tk.Label(root, text="Hazır", font=("Arial", 9), fg="gray")
     status.pack(pady=5)
 
-    # Chat
     chat_frame = tk.Frame(root)
     chat_frame.pack(fill="both", expand=True, padx=15, pady=5)
     chat_display = tk.Text(chat_frame, height=5, font=("Consolas", 9), state="disabled")
@@ -455,7 +452,6 @@ def main():
 
     root.protocol("WM_DELETE_WINDOW", on_close)
 
-    # Otomatik başlat (link ile geldiyse)
     if auto_token and auto_pw:
         root.after(500, on_start)
 
