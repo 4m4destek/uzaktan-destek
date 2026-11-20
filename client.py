@@ -59,16 +59,14 @@ def parse_args():
 def start_zrok_shares(token):
     procs = []
     p1 = subprocess.Popen(
-        [ZROK, "share", "private", token,
-         "--backend-mode", "tcpTunnel",
-         f"127.0.0.1:{VIDEO_PORT}"],
+        [ZROK, "share", "private", "--backend-mode", "tcpTunnel",
+         f"127.0.0.1:{VIDEO_PORT}", "--share-token", token],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     procs.append(p1)
     p2 = subprocess.Popen(
-        [ZROK, "share", "private", f"{token}_c",
-         "--backend-mode", "tcpTunnel",
-         f"127.0.0.1:{CTRL_PORT}"],
+        [ZROK, "share", "private", "--backend-mode", "tcpTunnel",
+         f"127.0.0.1:{CTRL_PORT}", "--share-token", f"{token}_c"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     procs.append(p2)
@@ -78,7 +76,7 @@ def start_zrok_shares(token):
             err = p.stderr.read().decode(errors="ignore")
             raise RuntimeError(f"Zrok hatası: {err}")
     print("[OK] Zrok tünelleri aktif")
-    return procs
+    return procs   
 
 
 # ─── Video: Ekran yakala → H.264 → TCP ───
