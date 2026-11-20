@@ -17,13 +17,11 @@ jobs:
           Copy-Item "ffmpeg-release-essentials/bin/ffmpeg.exe" .
       - name: Download zrok2
         run: |
-          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/openziti/zrok/releases/latest"
-          $tag = $release.tag_name
-          $ver = $tag -replace "^v",""
-          $url = "https://github.com/openziti/zrok/releases/download/$tag/zrok_${ver}_windows_amd64.tar.gz"
+          $ver = "v2.0.9"
+          $url = "https://github.com/openziti/zrok/releases/download/${ver}/zrok2_2.0.9_windows_amd64.tar.gz"
           Write-Host "Downloading: $url"
-          Invoke-WebRequest -Uri $url -OutFile zrok_windows.tar.gz
-          tar -xf zrok_windows.tar.gz
+          Invoke-WebRequest -Uri $url -OutFile zrok2_windows.tar.gz
+          tar -xf zrok2_windows.tar.gz
           Get-ChildItem -Recurse -Filter "zrok2.exe" | ForEach-Object { Copy-Item $_.FullName "./zrok2.exe" -Force }
           Get-ChildItem zrok2.exe
       - name: Build
