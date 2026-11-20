@@ -17,9 +17,15 @@ jobs:
           Copy-Item "ffmpeg-release-essentials/bin/ffmpeg.exe" .
       - name: Download zrok2
         run: |
-          Invoke-WebRequest -Uri "https://github.com/openziti/zrok/releases/download/v2.0.9/zrok_2.0.9_windows_amd64.tar.gz" -OutFile zrok_windows.tar.gz
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/openziti/zrok/releases/latest"
+          $tag = $release.tag_name
+          $ver = $tag -replace "^v",""
+          $url = "https://github.com/openziti/zrok/releases/download/$tag/zrok_${ver}_windows_amd64.tar.gz"
+          Write-Host "Downloading: $url"
+          Invoke-WebRequest -Uri $url -OutFile zrok_windows.tar.gz
           tar -xf zrok_windows.tar.gz
-          Move-Item zrok2.exe . -Force
+          Get-ChildItem -Recurse -Filter "zrok2.exe" | ForEach-Object { Copy-Item $_.FullName "./zrok2.exe" -Force }
+          Get-ChildItem zrok2.exe
       - name: Build
         run: pyinstaller --onefile --noconsole --add-binary "ffmpeg.exe;." --add-binary "zrok2.exe;." --hidden-import mss --hidden-import cv2 --hidden-import numpy --hidden-import PIL --name "UzaktanDesteK" client.py
       - uses: actions/upload-artifact@v4
