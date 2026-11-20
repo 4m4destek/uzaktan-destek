@@ -13,9 +13,13 @@ jobs:
       - name: Download ffmpeg
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+          $url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+          Write-Host "Downloading: $url"
+          Invoke-WebRequest -Uri $url -OutFile ffmpeg.zip
+          Write-Host "Downloaded: $((Get-Item ffmpeg.zip).Length) bytes"
           Expand-Archive ffmpeg.zip
           $ffmpeg = Get-ChildItem -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          Write-Host "Found: $($ffmpeg.FullName)"
           Copy-Item $ffmpeg.FullName "./ffmpeg.exe" -Force
           Write-Host "ffmpeg size: $((Get-Item ffmpeg.exe).Length)"
       - name: Download zrok2
@@ -27,9 +31,7 @@ jobs:
           Write-Host "Asset: $($asset.name)"
           Invoke-WebRequest -Uri $asset.browser_download_url -OutFile zrok_win.tar.gz
           tar -xzf zrok_win.tar.gz
-          if (Test-Path "./zrok2.exe") {
-            Write-Host "zrok2.exe already in current dir"
-          } else {
+          if (-not (Test-Path "./zrok2.exe")) {
             $exe = Get-ChildItem -Recurse -Filter "zrok2.exe" | Select-Object -First 1
             if ($exe) { Copy-Item $exe.FullName "./zrok2.exe" -Force }
           }
