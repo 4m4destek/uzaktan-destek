@@ -17,9 +17,9 @@ jobs:
           Copy-Item "ffmpeg-release-essentials/bin/ffmpeg.exe" .
       - name: Download zrok2
         run: |
-          Invoke-WebRequest -Uri "https://get.zrok.io" -OutFile install_zrok.ps1
-          powershell -ExecutionPolicy Bypass -File install_zrok.ps1
-          Copy-Item "$env:USERPROFILE\.zrok\zrok2.exe" .
+          $latest = Invoke-RestMethod -Uri "https://api.github.com/repos/cisco/zrok/releases/latest"
+          $asset = $latest.assets | Where-Object { $_.name -like "*windows*amd64*" }
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile zrok2.exe
       - name: Build
         run: pyinstaller --onefile --noconsole --add-binary "ffmpeg.exe;." --add-binary "zrok2.exe;." --hidden-import mss --hidden-import cv2 --hidden-import numpy --hidden-import PIL --name "UzaktanDesteK" client.py
       - uses: actions/upload-artifact@v4
